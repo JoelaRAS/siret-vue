@@ -6,14 +6,17 @@ import Button from 'primevue/button';
 import Card from 'primevue/card';
 import InputText from 'primevue/inputtext';
 import Calendar from 'primevue/calendar';
+import Toast from 'primevue/toast';
+import { useToast } from 'primevue/usetoast';
 
+const toast = useToast();
 const showSearch = ref(false);
 const formData = ref<EntrepriseInfo>({
   nom_complet: '',
   siret: '',
   siren: '',
   adresse: '',
-  date_creation: '', // Utilisez string pour les dates initialement
+  date_creation: '',
   tranche_effectif: '',
   activite_principale: '',
   nature_juridique: '',
@@ -22,17 +25,27 @@ const formData = ref<EntrepriseInfo>({
 const handleEntrepriseSelect = (entreprise: EntrepriseInfo) => {
   formData.value = { 
     ...entreprise,
-    date_creation: entreprise.date_creation ? new Date(entreprise.date_creation).toISOString().split('T')[0] : '' // Convertir en string
+    date_creation: entreprise.date_creation ? new Date(entreprise.date_creation).toISOString().split('T')[0] : ''
   };
   showSearch.value = false;
+  toast.add({
+    severity: 'success',
+    summary: 'Entreprise sélectionnée',
+    detail: 'Les informations ont été remplies automatiquement',
+    life: 3000,
+  });
 };
 
 const submitForm = () => {
   console.log('Formulaire soumis:', formData.value);
-  // Ajoutez ici la logique de soumission du formulaire
+  toast.add({
+    severity: 'success',
+    summary: 'Formulaire soumis',
+    detail: 'Les informations ont été enregistrées avec succès',
+    life: 3000,
+  });
 };
 
-// Propriété calculée pour gérer la conversion de la date
 const formattedDateCreation = computed({
   get() {
     return formData.value.date_creation ? new Date(formData.value.date_creation) : null;
@@ -45,69 +58,152 @@ const formattedDateCreation = computed({
 
 <template>
   <div class="max-w-4xl mx-auto p-6">
-    <Card>
+    <Toast position="top-right" />
+    
+    <Card class="enterprise-form-card">
       <template #title>
-        <h2 class="text-2xl font-bold mb-4">Formulaire d'entreprise</h2>
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-bold">Formulaire d'entreprise</h2>
+          <Button 
+            label="Rechercher une entreprise" 
+            icon="pi pi-search" 
+            class="p-button-outlined" 
+            @click="showSearch = true"
+          />
+        </div>
       </template>
+      
       <template #content>
-        <form @submit.prevent="submitForm" class="space-y-4">
-          <div class="mb-4">
-            <label for="nom_complet" class="block text-sm font-medium text-gray-700">Nom complet</label>
-            <InputText v-model="formData.nom_complet" id="nom_complet" class="w-full p-2 border rounded" />
+        <form @submit.prevent="submitForm" class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="form-group">
+              <label for="nom_complet" class="block text-sm font-medium text-gray-700 mb-1">
+                Nom complet
+              </label>
+              <InputText 
+                v-model="formData.nom_complet" 
+                id="nom_complet" 
+                class="w-full"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label for="siret" class="block text-sm font-medium text-gray-700 mb-1">
+                SIRET
+              </label>
+              <InputText 
+                v-model="formData.siret" 
+                id="siret" 
+                class="w-full"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label for="siren" class="block text-sm font-medium text-gray-700 mb-1">
+                SIREN
+              </label>
+              <InputText 
+                v-model="formData.siren" 
+                id="siren" 
+                class="w-full"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label for="date_creation" class="block text-sm font-medium text-gray-700 mb-1">
+                Date de création
+              </label>
+              <Calendar 
+                v-model="formattedDateCreation" 
+                id="date_creation" 
+                dateFormat="dd/mm/yy" 
+                class="w-full"
+              />
+            </div>
+            
+            <div class="form-group md:col-span-2">
+              <label for="adresse" class="block text-sm font-medium text-gray-700 mb-1">
+                Adresse
+              </label>
+              <InputText 
+                v-model="formData.adresse" 
+                id="adresse" 
+                class="w-full"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label for="tranche_effectif" class="block text-sm font-medium text-gray-700 mb-1">
+                Tranche d'effectif
+              </label>
+              <InputText 
+                v-model="formData.tranche_effectif" 
+                id="tranche_effectif" 
+                class="w-full"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label for="activite_principale" class="block text-sm font-medium text-gray-700 mb-1">
+                Activité principale
+              </label>
+              <InputText 
+                v-model="formData.activite_principale" 
+                id="activite_principale" 
+                class="w-full"
+              />
+            </div>
+            
+            <div class="form-group md:col-span-2">
+              <label for="nature_juridique" class="block text-sm font-medium text-gray-700 mb-1">
+                Nature juridique
+              </label>
+              <InputText 
+                v-model="formData.nature_juridique" 
+                id="nature_juridique" 
+                class="w-full"
+              />
+            </div>
           </div>
-          <div class="mb-4">
-            <label for="siret" class="block text-sm font-medium text-gray-700">SIRET</label>
-            <InputText v-model="formData.siret" id="siret" class="w-full p-2 border rounded" />
+          
+          <div class="pt-4">
+            <Button 
+              type="submit" 
+              label="Enregistrer" 
+              icon="pi pi-check" 
+              class="w-full p-button-primary"
+            />
           </div>
-          <div class="mb-4">
-            <label for="siren" class="block text-sm font-medium text-gray-700">SIREN</label>
-            <InputText v-model="formData.siren" id="siren" class="w-full p-2 border rounded" />
-          </div>
-          <div class="mb-4">
-            <label for="adresse" class="block text-sm font-medium text-gray-700">Adresse</label>
-            <InputText v-model="formData.adresse" id="adresse" class="w-full p-2 border rounded" />
-          </div>
-          <div class="mb-4">
-            <label for="date_creation" class="block text-sm font-medium text-gray-700">Date de création</label>
-            <Calendar v-model="formattedDateCreation" id="date_creation" dateFormat="dd/mm/yy" class="w-full" />
-          </div>
-          <div class="mb-4">
-            <label for="tranche_effectif" class="block text-sm font-medium text-gray-700">Tranche d'effectif</label>
-            <InputText v-model="formData.tranche_effectif" id="tranche_effectif" class="w-full p-2 border rounded" />
-          </div>
-          <div class="mb-4">
-            <label for="activite_principale" class="block text-sm font-medium text-gray-700">Activité principale</label>
-            <InputText v-model="formData.activite_principale" id="activite_principale" class="w-full p-2 border rounded" />
-          </div>
-          <div class="mb-4">
-            <label for="nature_juridique" class="block text-sm font-medium text-gray-700">Nature juridique</label>
-            <InputText v-model="formData.nature_juridique" id="nature_juridique" class="w-full p-2 border rounded" />
-          </div>
-          <Button type="submit" label="Soumettre" class="w-full p-button-primary" />
         </form>
       </template>
     </Card>
-    <Button label="Rechercher une entreprise" icon="pi pi-search" class="mt-4 p-button-secondary" @click="showSearch = true" />
-    <SearchDialog v-model:visible="showSearch" @select="handleEntrepriseSelect" />
+
+    <SearchDialog 
+      v-model:visible="showSearch" 
+      @select="handleEntrepriseSelect"
+    />
   </div>
 </template>
 
 <style scoped>
-.p-card {
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+.enterprise-form-card {
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
 }
 
-.p-button {
-  transition: background-color 0.3s ease;
+.form-group {
+  transition: all 0.2s;
 }
 
-.p-button:hover {
-  opacity: 0.9;
+:deep(.form-group:focus-within) label {
+  color: var(--primary-color);
 }
 
-.p-inputtext:focus, .p-calendar:focus {
-  box-shadow: 0 0 0 2px #4299e1;
+.p-calendar {
+  width: 100%;
+}
+
+.p-calendar .p-inputtext {
+  width: 100%;
 }
 </style>
