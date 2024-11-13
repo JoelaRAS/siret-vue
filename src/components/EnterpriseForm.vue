@@ -4,7 +4,7 @@ import type { EntrepriseInfo } from '../types';
 import SearchDialog from './SearchDialog.vue';
 
 const showSearch = ref(false);
-const formData = ref({
+const formData = ref<EntrepriseInfo>({
   nom_complet: '',
   siret: '',
   siren: '',
@@ -13,19 +13,11 @@ const formData = ref({
   tranche_effectif: '',
   activite_principale: '',
   nature_juridique: '',
-  telephone: '',
-  email: '',
-  commentaire: ''
 });
 
 const handleEntrepriseSelect = (entreprise: EntrepriseInfo) => {
-  formData.value = {
-    ...formData.value,
-    ...entreprise,
-    telephone: formData.value.telephone,
-    email: formData.value.email,
-    commentaire: formData.value.commentaire
-  };
+  formData.value = { ...entreprise };
+  showSearch.value = false;
 };
 
 const submitForm = () => {
@@ -55,84 +47,54 @@ const submitForm = () => {
           <div class="grid grid-cols-2 gap-4">
             <div class="field">
               <label for="nom_complet">Nom de l'entreprise</label>
-              <InputText
-                id="nom_complet"
-                v-model="formData.nom_complet"
-                class="w-full"
-              />
+              <InputText id="nom_complet" v-model="formData.nom_complet" class="w-full" />
             </div>
 
             <div class="field">
               <label for="siret">SIRET</label>
-              <InputText
-                id="siret"
-                v-model="formData.siret"
-                class="w-full"
-              />
+              <InputText id="siret" v-model="formData.siret" class="w-full" />
             </div>
 
             <div class="field">
               <label for="siren">SIREN</label>
-              <InputText
-                id="siren"
-                v-model="formData.siren"
-                class="w-full"
-              />
+              <InputText id="siren" v-model="formData.siren" class="w-full" />
             </div>
 
             <div class="field">
               <label for="adresse">Adresse</label>
-              <InputText
-                id="adresse"
-                v-model="formData.adresse"
-                class="w-full"
-              />
+              <InputText id="adresse" v-model="formData.adresse" class="w-full" />
             </div>
 
             <div class="field">
-              <label for="telephone">Téléphone</label>
-              <InputText
-                id="telephone"
-                v-model="formData.telephone"
-                class="w-full"
-              />
+              <label for="date_creation">Date de création</label>
+              <Calendar id="date_creation" v-model="formData.date_creation" dateFormat="dd/mm/yy" class="w-full" />
             </div>
 
             <div class="field">
-              <label for="email">Email</label>
-              <InputText
-                id="email"
-                v-model="formData.email"
-                type="email"
-                class="w-full"
-              />
+              <label for="tranche_effectif">Tranche d'effectif</label>
+              <InputText id="tranche_effectif" v-model="formData.tranche_effectif" class="w-full" />
             </div>
 
-            <div class="field col-span-2">
-              <label for="commentaire">Commentaire</label>
-              <Textarea
-                id="commentaire"
-                v-model="formData.commentaire"
-                rows="4"
-                class="w-full"
-              />
+            <div class="field">
+              <label for="activite_principale">Activité principale</label>
+              <InputText id="activite_principale" v-model="formData.activite_principale" class="w-full" />
+            </div>
+
+            <div class="field">
+              <label for="nature_juridique">Nature juridique</label>
+              <InputText id="nature_juridique" v-model="formData.nature_juridique" class="w-full" />
             </div>
           </div>
 
           <div class="flex justify-end mt-6">
-            <Button
-              type="submit"
-              label="Enregistrer"
-              icon="pi pi-check"
-              class="p-button-success"
-            />
+            <Button type="submit" label="Enregistrer" icon="pi pi-check" class="p-button-success" />
           </div>
         </form>
       </template>
     </Card>
 
     <SearchDialog
-      v-model="showSearch"
+      v-model:visible="showSearch"
       @select="handleEntrepriseSelect"
     />
   </div>
