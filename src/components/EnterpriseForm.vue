@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import type { EntrepriseInfo } from '../types';
 import SearchDialog from './SearchDialog.vue';
 
@@ -9,14 +9,17 @@ const formData = ref<EntrepriseInfo>({
   siret: '',
   siren: '',
   adresse: '',
-  date_creation: '',
+  date_creation: '', // Utilisez string pour les dates initialement
   tranche_effectif: '',
   activite_principale: '',
   nature_juridique: '',
 });
 
 const handleEntrepriseSelect = (entreprise: EntrepriseInfo) => {
-  formData.value = { ...entreprise };
+  formData.value = { 
+    ...entreprise,
+    date_creation: entreprise.date_creation ? new Date(entreprise.date_creation).toISOString().split('T')[0] : '' // Convertir en string
+  };
   showSearch.value = false;
 };
 
@@ -24,78 +27,69 @@ const submitForm = () => {
   console.log('Formulaire soumis:', formData.value);
   // Ajoutez ici la logique de soumission du formulaire
 };
+
+// Propriété calculée pour gérer la conversion de la date
+const formattedDateCreation = computed({
+  get() {
+    return formData.value.date_creation ? new Date(formData.value.date_creation) : null;
+  },
+  set(value: Date | null) {
+    formData.value.date_creation = value ? value.toISOString().split('T')[0] : '';
+  }
+});
 </script>
 
 <template>
   <div class="max-w-4xl mx-auto p-6">
     <Card>
       <template #title>
-        Formulaire Entreprise
+        Formulaire d'entreprise
       </template>
       <template #content>
-        <form @submit.prevent="submitForm" class="space-y-4">
-          <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-bold">Informations de l'entreprise</h2>
-            <Button 
-              type="button"
-              icon="pi pi-search"
-              label="Rechercher une entreprise"
-              @click="showSearch = true"
-            />
+        <form @submit.prevent="submitForm">
+          <div class="mb-4">
+            <label for="nom_complet" class="block text-sm font-medium text-gray-700">Nom complet</label>
+            <input type="text" v-model="formData.nom_complet" id="nom_complet" class="input w-full" />
           </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div class="field">
-              <label for="nom_complet">Nom de l'entreprise</label>
-              <InputText id="nom_complet" v-model="formData.nom_complet" class="w-full" />
-            </div>
-
-            <div class="field">
-              <label for="siret">SIRET</label>
-              <InputText id="siret" v-model="formData.siret" class="w-full" />
-            </div>
-
-            <div class="field">
-              <label for="siren">SIREN</label>
-              <InputText id="siren" v-model="formData.siren" class="w-full" />
-            </div>
-
-            <div class="field">
-              <label for="adresse">Adresse</label>
-              <InputText id="adresse" v-model="formData.adresse" class="w-full" />
-            </div>
-
-            <div class="field">
-              <label for="date_creation">Date de création</label>
-              <Calendar id="date_creation" v-model="formData.date_creation" dateFormat="dd/mm/yy" class="w-full" />
-            </div>
-
-            <div class="field">
-              <label for="tranche_effectif">Tranche d'effectif</label>
-              <InputText id="tranche_effectif" v-model="formData.tranche_effectif" class="w-full" />
-            </div>
-
-            <div class="field">
-              <label for="activite_principale">Activité principale</label>
-              <InputText id="activite_principale" v-model="formData.activite_principale" class="w-full" />
-            </div>
-
-            <div class="field">
-              <label for="nature_juridique">Nature juridique</label>
-              <InputText id="nature_juridique" v-model="formData.nature_juridique" class="w-full" />
-            </div>
+          <div class="mb-4">
+            <label for="siret" class="block text-sm font-medium text-gray-700">SIRET</label>
+            <input type="text" v-model="formData.siret" id="siret" class="input w-full" />
           </div>
-
-          <div class="flex justify-end mt-6">
-            <Button type="submit" label="Enregistrer" icon="pi pi-check" class="p-button-success" />
+          <div class="mb-4">
+            <label for="siren" class="block text-sm font-medium text-gray-700">SIREN</label>
+            <input type="text" v-model="formData.siren" id="siren" class="input w-full" />
           </div>
+          <div class="mb-4">
+            <label for="adresse" class="block text-sm font-medium text-gray-700">Adresse</label>
+            <input type="text" v-model="formData.adresse" id="adresse" class="input w-full" />
+          </div>
+          <div class="mb-4">
+            <label for="date_creation" class="block text-sm font-medium text-gray-700">Date de création</label>
+            <Calendar id="date_creation" v-model="formattedDateCreation" dateFormat="dd/mm/yy" class="w-full" />
+          </div>
+          <div class="mb-4">
+            <label for="tranche_effectif" class="block text-sm font-medium text-gray-700">Tranche d'effectif</label>
+            <input type="text" v-model="formData.tranche_effectif" id="tranche_effectif" class="input w-full" />
+          </div>
+          <div class="mb-4">
+            <label for="activite_principale" class="block text-sm font-medium text-gray-700">Activité principale</label>
+            <input type="text" v-model="formData.activite_principale" id="activite_principale" class="input w-full" />
+          </div>
+          <div class="mb-4">
+            <label for="nature_juridique" class="block text-sm font-medium text-gray-700">Nature juridique</label>
+            <input type="text" v-model="formData.nature_juridique" id="nature_juridique" class="input w-full" />
+          </div>
+          <Button type="submit" label="Soumettre" class="w-full" />
         </form>
       </template>
     </Card>
-
-    <SearchDialog
-      v-model:visible="showSearch"
-      @select="handleEntrepriseSelect"
-    />
+    <Button label="Rechercher une entreprise" icon="pi pi-search" class="mt-4" @click="showSearch = true" />
+    <SearchDialog :visible="showSearch" @update:visible="showSearch = $event" @select="handleEntrepriseSelect" />
   </div>
 </template>
+
+<style scoped>
+.input {
+  /* Ajoutez vos styles ici */
+}
+</style>
