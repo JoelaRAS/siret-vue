@@ -16,7 +16,7 @@ const formData = ref<EntrepriseInfo>({
   siret: '',
   siren: '',
   adresse: '',
-  date_creation: '',
+  date_creation: '', // Utilisez string pour les dates initialement
   tranche_effectif: '',
   activite_principale: '',
   nature_juridique: '',
@@ -25,7 +25,7 @@ const formData = ref<EntrepriseInfo>({
 const handleEntrepriseSelect = (entreprise: EntrepriseInfo) => {
   formData.value = { 
     ...entreprise,
-    date_creation: entreprise.date_creation ? new Date(entreprise.date_creation).toISOString().split('T')[0] : ''
+    date_creation: entreprise.date_creation ? new Date(entreprise.date_creation).toISOString().split('T')[0] : '' // Convertir en string
   };
   showSearch.value = false;
   toast.add({
@@ -46,6 +46,7 @@ const submitForm = () => {
   });
 };
 
+// Propriété calculée pour gérer la conversion de la date
 const formattedDateCreation = computed({
   get() {
     return formData.value.date_creation ? new Date(formData.value.date_creation) : null;
@@ -110,6 +111,17 @@ const formattedDateCreation = computed({
             </div>
             
             <div class="form-group">
+              <label for="adresse" class="block text-sm font-medium text-gray-700 mb-1">
+                Adresse
+              </label>
+              <InputText 
+                v-model="formData.adresse" 
+                id="adresse" 
+                class="w-full"
+              />
+            </div>
+            
+            <div class="form-group">
               <label for="date_creation" class="block text-sm font-medium text-gray-700 mb-1">
                 Date de création
               </label>
@@ -117,17 +129,6 @@ const formattedDateCreation = computed({
                 v-model="formattedDateCreation" 
                 id="date_creation" 
                 dateFormat="dd/mm/yy" 
-                class="w-full"
-              />
-            </div>
-            
-            <div class="form-group md:col-span-2">
-              <label for="adresse" class="block text-sm font-medium text-gray-700 mb-1">
-                Adresse
-              </label>
-              <InputText 
-                v-model="formData.adresse" 
-                id="adresse" 
                 class="w-full"
               />
             </div>
@@ -154,7 +155,7 @@ const formattedDateCreation = computed({
               />
             </div>
             
-            <div class="form-group md:col-span-2">
+            <div class="form-group">
               <label for="nature_juridique" class="block text-sm font-medium text-gray-700 mb-1">
                 Nature juridique
               </label>
@@ -166,44 +167,33 @@ const formattedDateCreation = computed({
             </div>
           </div>
           
-          <div class="pt-4">
-            <Button 
-              type="submit" 
-              label="Enregistrer" 
-              icon="pi pi-check" 
-              class="w-full p-button-primary"
-            />
-          </div>
+          <Button type="submit" label="Soumettre" class="w-full p-button-primary" />
         </form>
       </template>
     </Card>
-
-    <SearchDialog 
-      v-model:visible="showSearch" 
-      @select="handleEntrepriseSelect"
-    />
+    
+    <SearchDialog v-model:visible="showSearch" @select="handleEntrepriseSelect" />
   </div>
 </template>
 
 <style scoped>
-.enterprise-form-card {
-  background-color: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-}
-
-.form-group {
-  transition: all 0.2s;
-}
-
-:deep(.form-group:focus-within) label {
-  color: var(--primary-color);
-}
-
 .p-calendar {
   width: 100%;
 }
 
 .p-calendar .p-inputtext {
   width: 100%;
+}
+
+.form-group {
+  position: relative;
+}
+
+.form-group label {
+  transition: all 0.2s;
+}
+
+:deep(.form-group:focus-within) label {
+  color: var(--primary-color);
 }
 </style>

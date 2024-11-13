@@ -127,7 +127,6 @@ const closeDialog = () => {
   </Dialog>
 </template>
 
-
 <style scoped>
 .result-card {
   background-color: white;
