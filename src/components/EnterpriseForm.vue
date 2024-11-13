@@ -30,7 +30,11 @@ const submitForm = () => {
 
 // Propriété calculée pour gérer la conversion de la date
 const formattedDateCreation = computed({
-  get() {
+/*************  ✨ Codeium Command ⭐  *************/
+/**
+ * Returns the date of creation as a Date object if available, otherwise returns null.
+ */
+/******  caa22d99-58ce-49aa-a8d3-a74e8333fb59  *******/  get() {
     return formData.value.date_creation ? new Date(formData.value.date_creation) : null;
   },
   set(value: Date | null) {
@@ -87,9 +91,3 @@ const formattedDateCreation = computed({
     <SearchDialog :visible="showSearch" @update:visible="showSearch = $event" @select="handleEntrepriseSelect" />
   </div>
 </template>
-
-<style scoped>
-.input {
-  /* Ajoutez vos styles ici */
-}
-</style>
