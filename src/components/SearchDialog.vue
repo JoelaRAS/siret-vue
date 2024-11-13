@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref } from 'vue'; // Supprimez 'watch' si non utilisé
 import { searchEntreprise, searchEntrepriseByName } from '../services/entrepriseApi';
 import type { EntrepriseInfo } from '../types';
 
@@ -45,7 +45,7 @@ const closeDialog = () => {
 </script>
 
 <template>
-  <Dialog :visible="visible" @update:visible="closeDialog" modal header="Recherche d'entreprise" :style="{ width: '50vw' }">
+  <Dialog :visible="props.visible" @update:visible="closeDialog" modal header="Recherche d'entreprise" :style="{ width: '50vw' }">
     <div class="card-content p-6">
       <div class="tabs">
         <div class="tabs-list grid w-full grid-cols-2 mb-6">
@@ -55,19 +55,31 @@ const closeDialog = () => {
           >
             Par SIRET/SIREN
           </Button>
-          <Button 
+          <Button
             :class="{ 'p-button-secondary': searchType !== 'name' }"
             @click="searchType = 'name'"
           >
             Par Nom
           </Button>
         </div>
-        <div class="tabs-content">
+        <div class="tabs-content" v-if="searchType === 'siret'">
           <form @submit.prevent="handleSubmit" class="space-y-4">
-            <InputText
+            <input
+              type="text"
               v-model="query"
-              :placeholder="searchType === 'siret' ? 'Entrez le numéro SIRET ou SIREN' : 'Entrez le nom de l'entreprise'"
-              class="w-full"
+              placeholder="Entrez le numéro SIRET ou SIREN (complet ou partiel)"
+              class="input w-full"
+            />
+            <Button type="submit" label="Rechercher" icon="pi pi-search" class="w-full" />
+          </form>
+        </div>
+        <div class="tabs-content" v-if="searchType === 'name'">
+          <form @submit.prevent="handleSubmit" class="space-y-4">
+            <input
+              type="text"
+              v-model="query"
+              placeholder="Entrez le nom de l'entreprise (complet ou partiel)"
+              class="input w-full"
             />
             <Button type="submit" label="Rechercher" icon="pi pi-search" class="w-full" />
           </form>
