@@ -7,3 +7,16 @@ import EnterpriseForm from './components/EnterpriseForm.vue';
     <EnterpriseForm />
   </div>
 </template>
+
+<style>
+.min-h-screen {
+  min-height: 100vh;
+}
+.bg-gray-50 {
+  background-color: #f9fafb;
+}
+.py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+</style>
