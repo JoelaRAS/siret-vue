@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { defineEmits, defineProps } from 'vue';
+import { ref } from 'vue';
 import type { EntrepriseInfo } from '../types/entreprise';
 import { searchEntreprise, searchEntrepriseByName } from '../services/entrepriseService';
 
 const props = defineProps<{
-  visible: boolean;
+  visible: boolean
 }>();
 
 const emit = defineEmits<{
@@ -44,49 +43,103 @@ const search = async () => {
   }
 };
 
-// Watcher pour fermer le popup lorsque props.visible change
-watch(() => props.visible, (newVal) => {
-  if (!newVal) {
-    searchQuery.value = '';
-    results.value = [];
+const selectCompany = (company: EntrepriseInfo) => {
+  selectedCompany.value = company;
+};
+
+const confirmSelection = () => {
+  if (selectedCompany.value) {
+    emit('select', selectedCompany.value);
+    emit('update:visible', false);
     selectedCompany.value = null;
-    error.value = '';
   }
-});
+};
+
+const closeDialog = () => {
+  emit('update:visible', false);
+  selectedCompany.value = null;
+  results.value = [];
+  searchQuery.value = '';
+  error.value = '';
+};
 </script>
 
 <template>
-  <Dialog :visible="props.visible" @hide="emit('update:visible', false)">
-    <template #header>
-      <h3>Recherche d'entreprise</h3>
-    </template>
-    <div>
-      <div class="form-group">
-        <label for="searchQuery">Recherche</label>
-        <InputText 
-          id="searchQuery"
-          v-model="searchQuery" 
-          placeholder="Entrez le SIRET ou le nom de l'entreprise"
-        />
-      </div>
-      <div class="form-group">
-        <label for="searchType">Type de recherche</label>
-        <Dropdown 
-          id="searchType"
+  <Dialog 
+    :visible="props.visible"
+    modal 
+    header="Rechercher une entreprise" 
+    :style="{ width: '50vw' }"
+    @update:visible="closeDialog"
+  >
+    <div class="search-container">
+      <div class="search-type">
+        <RadioButton 
           v-model="searchType" 
-          :options="[{ label: 'SIRET', value: 'siret' }, { label: 'Nom', value: 'name' }]"
+          value="siret" 
+          inputId="siret" 
+        />
+        <label for="siret">SIRET/SIREN</label>
+        
+        <RadioButton 
+          v-model="searchType" 
+          value="name" 
+          inputId="name" 
+        />
+        <label for="name">Nom</label>
+      </div>
+
+      <div class="search-input">
+        <InputText 
+          v-model="searchQuery" 
+          :placeholder="searchType === 'siret' ? 'Entrez un SIRET ou SIREN' : 'Entrez le nom de l\'entreprise'"
+          @keyup.enter="search"
+        />
+        <Button 
+          icon="pi pi-search" 
+          @click="search" 
+          :loading="loading"
         />
       </div>
-      <Button @click="search" :loading="loading">Rechercher</Button>
-      <div v-if="error" class="error">{{ error }}</div>
-      <div v-if="results.length">
-        <ul>
-          <li v-for="company in results" :key="company.siret" @click="emit('select', company)">
-            {{ company.nom_complet }} - {{ company.siret }}
-          </li>
-        </ul>
+
+      <small class="error-message" v-if="error">{{ error }}</small>
+
+      <div class="results" v-if="results.length">
+        <div 
+          v-for="company in results" 
+          :key="company.siret"
+          class="result-item"
+          :class="{ 'selected': selectedCompany?.siret === company.siret }"
+          @click="selectCompany(company)"
+        >
+          <div class="result-content">
+            <h3>{{ company.nom_complet }}</h3>
+            <p>SIRET: {{ company.siret }}</p>
+            <p>{{ company.adresse }}</p>
+            <p>Activité: {{ company.activite_principale }}</p>
+          </div>
+          <div class="selection-indicator">
+            <i class="pi pi-check" v-if="selectedCompany?.siret === company.siret"></i>
+          </div>
+        </div>
       </div>
     </div>
+
+    <template #footer>
+      <Button 
+        label="Annuler" 
+        icon="pi pi-times" 
+        @click="closeDialog" 
+        class="p-button-text"
+      />
+      <Button 
+        label="Sélectionner" 
+        icon="pi pi-check" 
+        @click="confirmSelection" 
+        :disabled="!selectedCompany"
+        class="p-button-success" 
+      />
+    </template>
   </Dialog>
 </template>
 
