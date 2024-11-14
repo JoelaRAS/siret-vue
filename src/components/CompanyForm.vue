@@ -7,14 +7,17 @@ const formData = ref<EntrepriseInfo>({
   siret: '',
   siren: '',
   adresse: '',
-  date_creation: '',
+  date_creation: null as Date | null, // Initialisé comme null
   tranche_effectif: '',
   activite_principale: '',
   nature_juridique: '',
 });
 
 const updateFormData = (company: EntrepriseInfo) => {
-  formData.value = { ...company };
+  formData.value = { 
+    ...company,
+    date_creation: company.date_creation ? new Date(company.date_creation) : null // Conversion de la date
+  };
 };
 
 defineExpose({ updateFormData });
@@ -32,25 +35,24 @@ defineExpose({ updateFormData });
       />
     </div>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label for="siret">SIRET</label>
-        <InputText 
-          id="siret"
-          v-model="formData.siret" 
-          name="siret"
-          placeholder="Numéro SIRET"
-        />
-      </div>
-      <div class="form-group">
-        <label for="siren">SIREN</label>
-        <InputText 
-          id="siren"
-          v-model="formData.siren" 
-          name="siren"
-          placeholder="Numéro SIREN"
-        />
-      </div>
+    <div class="form-group">
+      <label for="siret">SIRET</label>
+      <InputText 
+        id="siret"
+        v-model="formData.siret" 
+        name="siret"
+        placeholder="Numéro SIRET"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="siren">SIREN</label>
+      <InputText 
+        id="siren"
+        v-model="formData.siren" 
+        name="siren"
+        placeholder="Numéro SIREN"
+      />
     </div>
 
     <div class="form-group">
@@ -91,7 +93,7 @@ defineExpose({ updateFormData });
         id="activite_principale"
         v-model="formData.activite_principale" 
         name="activite_principale"
-        placeholder="Activité principale de l'entreprise"
+        placeholder="Activité principale"
       />
     </div>
 
@@ -101,16 +103,7 @@ defineExpose({ updateFormData });
         id="nature_juridique"
         v-model="formData.nature_juridique" 
         name="nature_juridique"
-        placeholder="Nature juridique de l'entreprise"
-      />
-    </div>
-
-    <div class="form-actions">
-      <Button 
-        type="submit"
-        label="Enregistrer" 
-        icon="pi pi-check" 
-        class="p-button-success"
+        placeholder="Nature juridique"
       />
     </div>
   </form>

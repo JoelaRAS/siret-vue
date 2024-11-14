@@ -11,7 +11,7 @@ export interface EntrepriseInfo {
   siret: string;
   siren: string;
   adresse: string;
-  date_creation: string;
+  date_creation: Date | null; // Modifié pour être de type Date ou null
   tranche_effectif: string;
   activite_principale: string;
   nature_juridique: string;

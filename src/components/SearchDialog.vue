@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { defineEmits } from 'vue';
 import type { EntrepriseInfo } from '../types/entreprise';
 import { searchEntreprise, searchEntrepriseByName } from '../services/entrepriseService';
-
-const props = defineProps<{
-  visible: boolean
-}>();
 
 const emit = defineEmits<{
   (e: 'update:visible', value: boolean): void
   (e: 'select', company: EntrepriseInfo): void
+}>();
+
+const props = defineProps<{
+  visible: boolean;
 }>();
 
 const searchQuery = ref('');
@@ -28,9 +29,14 @@ const search = async () => {
   selectedCompany.value = null;
   
   try {
-    results.value = await (searchType.value === 'siret' 
+    const rawResults = await (searchType.value === 'siret' 
       ? searchEntreprise(searchQuery.value)
       : searchEntrepriseByName(searchQuery.value));
+    
+    results.value = rawResults.map(company => ({
+      ...company,
+      date_creation: company.date_creation ? new Date(company.date_creation) : null // Conversion de la date
+    }));
   } catch (e) {
     error.value = (e as Error).message;
   } finally {
