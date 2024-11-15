@@ -3,24 +3,19 @@ import { ref } from 'vue';
 import type { EntrepriseInfo } from '../types/entreprise';
 import { searchEntreprise, searchEntrepriseByName } from '../services/entrepriseService';
 
-// Props pour contrôler la visibilité du dialogue
 const props = defineProps<{ visible: boolean }>();
-
-// Emission des événements pour fermer le dialogue et transmettre l'entreprise sélectionnée
 const emit = defineEmits<{ 
   (e: 'update:visible', value: boolean): void;
   (e: 'selectCompany', company: EntrepriseInfo): void; 
 }>();
 
-// États pour les champs de recherche
 const searchQuery = ref('');
-const searchType = ref('siret'); // Type de recherche : par SIRET/SIREN ou par nom
+const searchType = ref('siret');
 const loading = ref(false);
 const results = ref<EntrepriseInfo[]>([]);
 const error = ref('');
 const selectedCompany = ref<EntrepriseInfo | null>(null);
 
-// Fonction de recherche d'entreprise
 const search = async () => {
   loading.value = true;
   error.value = '';
@@ -32,12 +27,7 @@ const search = async () => {
       ? searchEntreprise(searchQuery.value)
       : searchEntrepriseByName(searchQuery.value));
 
-    results.value = rawResults
-      .filter(company => typeof company === 'object' && company !== null)
-      .map(company => ({
-        ...company,
-        date_creation: company.date_creation ? new Date(company.date_creation) : null 
-      }));
+    results.value = rawResults;
   } catch (e) {
     error.value = (e as Error).message;
   } finally {
@@ -45,12 +35,10 @@ const search = async () => {
   }
 };
 
-// Fonction pour sélectionner une entreprise
 const selectCompany = (company: EntrepriseInfo) => {
   selectedCompany.value = company;
 };
 
-// Confirmation de la sélection
 const confirmSelection = () => {
   if (selectedCompany.value) {
     emit('selectCompany', selectedCompany.value);
@@ -59,7 +47,6 @@ const confirmSelection = () => {
   }
 };
 
-// Fermeture du dialogue
 const closeDialog = () => {
   emit('update:visible', false);
   selectedCompany.value = null;
@@ -75,7 +62,6 @@ const closeDialog = () => {
       <div class="search-type">
         <RadioButton v-model="searchType" value="siret" inputId="siret" />
         <label for="siret">SIRET/SIREN</label>
-        
         <RadioButton v-model="searchType" value="name" inputId="name" />
         <label for="name">Nom</label>
       </div>
