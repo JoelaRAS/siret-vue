@@ -27,7 +27,7 @@ const formatAddress = (adresse: { numeroVoieEtablissement?: any; typeVoieEtablis
 const generateVATNumber = (siren: string) => {
   if (!/^\d{9}$/.test(siren)) {
     console.error("Le numéro SIREN doit être composé de 9 chiffres.");
-    return null;
+    return 'Non disponible';
   }
   const sirenNumber = parseInt(siren, 10);
   const key = (12 + 3 * (sirenNumber % 97)) % 97;
@@ -36,18 +36,26 @@ const generateVATNumber = (siren: string) => {
 
 // Extraction des informations d'une entreprise
 const extractEntrepriseInfoFromINSEE = (etablissement: any) => {
+  // Vérification et extraction de la date
+  const dateCreation = etablissement.uniteLegale.dateCreationUniteLegale 
+    ? new Date(etablissement.uniteLegale.dateCreationUniteLegale).toLocaleDateString() 
+    : 'Non disponible';
+
+  // Assure que le SIREN est correctement extrait
+  const siren = etablissement.uniteLegale.siren || 'Non disponible';
+
   return {
     nom_complet: etablissement.uniteLegale.denominationUniteLegale || 'Non disponible',
     siret: etablissement.siret || 'Non disponible',
-    siren: etablissement.uniteLegale.siren || 'Non disponible',
+    siren: siren,
     adresse: formatAddress(etablissement.adresseEtablissement) || 'Non disponible',
     code_postal: etablissement.adresseEtablissement?.codePostalEtablissement || 'Non disponible',
     ville: etablissement.adresseEtablissement?.libelleCommuneEtablissement || 'Non disponible',
-    date_creation: etablissement.uniteLegale.dateCreationUniteLegale ? new Date(etablissement.uniteLegale.dateCreationUniteLegale).toLocaleDateString() : 'Non disponible',
+    date_creation: dateCreation,
     tranche_effectif: etablissement.uniteLegale.trancheEffectifsUniteLegale || 'Non disponible',
     activite_principale: etablissement.uniteLegale.activitePrincipaleUniteLegale || 'Non disponible',
     nature_juridique: etablissement.uniteLegale.categorieJuridiqueUniteLegale || 'Non disponible',
-    vat_number: generateVATNumber(etablissement.uniteLegale.siren) || 'Non disponible',
+    vat_number: generateVATNumber(siren),
   };
 };
 
@@ -75,7 +83,7 @@ export const searchEntreprise = async (query: string) => {
 };
 
 // Recherche de SIRENs par nom via l'API gouvernementale
-export const searchEntrepriseByTextGovApi = async (query: any) => {
+export const searchEntrepriseByTextGovApi = async (query: string) => {
   try {
     const response = await axios.get('https://recherche-entreprises.api.gouv.fr/search', {
       params: {
@@ -85,15 +93,11 @@ export const searchEntrepriseByTextGovApi = async (query: any) => {
     });
 
     if (response.data && response.data.results && response.data.results.length > 0) {
-      return response.data.results.map((result: { siren: any; }) => result.siren);
+      return response.data.results.map((result: { siren: string }) => result.siren);
     }
     throw new Error("Aucune entreprise trouvée avec ce nom");
   } catch (error) {
-    if (error instanceof Error) {
-      console.error("Erreur lors de la recherche via l'API gouv :", error.message);
-    } else {
-      console.error("Erreur lors de la recherche via l'API gouv :", error);
-    }
+    console.error("Erreur lors de la recherche via l'API gouv :", error instanceof Error ? error.message : error);
     throw new Error("Impossible de rechercher des entreprises pour le moment");
   }
 };
@@ -105,7 +109,7 @@ export const searchEntrepriseByName = async (query: string) => {
     console.log("SIRENs trouvés via l'API gouv :", sirenList);
 
     const entreprises = await Promise.all(
-      sirenList.map(async (siren: any) => {
+      sirenList.map(async (siren: string) => {
         try {
           const result = await searchEntreprise(siren);
           return result;
