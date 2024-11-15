@@ -23,11 +23,25 @@ const formData = ref<EntrepriseInfo>({
 const isDialogVisible = ref(false);
 
 const updateFormData = (company: EntrepriseInfo) => {
+  // Vérification du format de date
+  console.log("Date de création reçue:", company.date_creation);
+  let formattedDate = null;
+
+  if (company.date_creation && typeof company.date_creation === 'string') {
+    const parsedDate = Date.parse(company.date_creation); // Essaye de parser la date
+    if (!isNaN(parsedDate)) {
+      formattedDate = new Date(parsedDate);
+    } else {
+      console.warn("Date de création dans un format invalide :", company.date_creation);
+    }
+  }
+
   formData.value = { 
     ...company,
-    date_creation: company.date_creation ? new Date(company.date_creation) : null  // Convert to Date if available
+    date_creation: formattedDate, // Assure que c’est bien un objet Date ou null
   };
 };
+
 
 defineExpose({ updateFormData });
 </script>
@@ -41,7 +55,6 @@ defineExpose({ updateFormData });
     <div class="form-group">
       <label for="nom_complet">Nom de l'entreprise</label>
       <InputText id="nom_complet" v-model="formData.nom_complet" placeholder="Nom de l'entreprise" />
-    </div>
 
     <div class="form-group">
       <label for="siret">SIRET</label>
@@ -70,17 +83,17 @@ defineExpose({ updateFormData });
       </div>
     </div>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label for="date_creation">Date de création</label>
-        <Calendar 
-          id="date_creation"
-          v-model="formData.date_creation" 
-          name="date_creation"
-          dateFormat="dd/mm/yy"
-          placeholder="Sélectionnez une date"
-        />
-      </div>
+    <div class="form-group">
+      <label for="date_creation">Date de création</label>
+      <Calendar 
+        id="date_creation"
+        v-model="formData.date_creation" 
+        name="date_creation"
+        dateFormat="dd/mm/yy"
+        placeholder="Sélectionnez une date"
+      />
+    </div>
+
 
       <div class="form-group">
         <label for="tranche_effectif">Tranche d'effectif</label>
