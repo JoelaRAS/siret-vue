@@ -3,12 +3,6 @@ import { ref } from 'vue';
 import type { EntrepriseInfo } from '../types/entreprise';
 import { searchEntreprise, searchEntrepriseByName } from '../services/entrepriseService';
 
-// Importation des composants PrimeVue (si nécessaire)
-import Dialog from 'primevue/dialog';
-import RadioButton from 'primevue/radiobutton';
-import InputText from 'primevue/inputtext';
-import Button from 'primevue/button';
-
 // Props pour contrôler la visibilité du dialogue
 const props = defineProps<{ visible: boolean }>();
 
@@ -38,10 +32,12 @@ const search = async () => {
       ? searchEntreprise(searchQuery.value)
       : searchEntrepriseByName(searchQuery.value));
 
-    results.value = rawResults.filter(company => typeof company === 'object' && company !== null).map(company => ({
-      ...company,
-      date_creation: company.date_creation ? new Date(company.date_creation) : null 
-    }));
+    results.value = rawResults
+      .filter(company => typeof company === 'object' && company !== null)
+      .map(company => ({
+        ...company,
+        date_creation: company.date_creation ? new Date(company.date_creation) : null 
+      }));
   } catch (e) {
     error.value = (e as Error).message;
   } finally {
@@ -85,7 +81,7 @@ const closeDialog = () => {
       </div>
 
       <div class="search-input">
-        <InputText v-model="searchQuery" :placeholder="searchType === 'siret' ? 'Entrez un SIRET ou SIREN' : 'Entrez le nom de l'entreprise'" @keyup.enter="search" />
+        <InputText v-model="searchQuery" :placeholder="searchType === 'siret' ? 'Entrez un SIRET ou SIREN' : 'Entrez le nom de l\'entreprise'" @keyup.enter="search" />
         <Button icon="pi pi-search" @click="search" :loading="loading" />
       </div>
 
