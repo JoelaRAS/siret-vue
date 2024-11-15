@@ -25,7 +25,7 @@ const isDialogVisible = ref(false);
 const updateFormData = (company: EntrepriseInfo) => {
   formData.value = { 
     ...company,
-    date_creation: company.date_creation ? new Date(company.date_creation) : null
+    date_creation: company.date_creation ? new Date(company.date_creation) : null  // Convert to Date if available
   };
 };
 
