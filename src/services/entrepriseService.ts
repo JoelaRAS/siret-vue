@@ -1,4 +1,3 @@
-// entrepriseService.ts
 import axios from 'axios';
 import { tokenService } from './tokenService';
 
@@ -77,13 +76,21 @@ const extractEntrepriseInfoFromINSEE = (etablissement: any): EntrepriseInfo => {
 
 export const searchEntreprise = async (query: string): Promise<EntrepriseInfo[]> => {
   try {
+    console.log(`Recherche pour le SIRET : ${query}`);
     const response = await axiosInstance.get(`/siret/${query}`);
+    console.log('Réponse brute de l’API INSEE pour le SIRET:', response.data);
+
     if (!response.data || !response.data.uniteLegale) {
       throw new Error("Données d'entreprise non trouvées.");
     }
+
     return [extractEntrepriseInfoFromINSEE(response.data)];
   } catch (error) {
-    console.error('Erreur lors de la recherche par SIRET/SIREN:', error);
+    if (axios.isAxiosError(error)) {
+      console.error('Erreur lors de la recherche par SIRET/SIREN:', error.response?.data || error.message);
+    } else {
+      console.error('Erreur lors de la recherche par SIRET/SIREN:', (error as Error).message);
+    }
     throw new Error("Impossible de trouver l'entreprise avec ce SIRET/SIREN.");
   }
 };
@@ -93,16 +100,24 @@ export const searchEntrepriseByName = async (query: string): Promise<EntrepriseI
     const response = await axios.get('https://recherche-entreprises.api.gouv.fr/search', {
       params: { q: query, per_page: 10 },
     });
+
     console.log('Résultats bruts pour la recherche par nom:', response.data);
+
     if (response.data && response.data.results) {
       const entreprises = await Promise.all(
         response.data.results.map(async (result: any) => await searchEntreprise(result.siren))
       );
       return entreprises.flat();
     }
+
     throw new Error("Aucune entreprise trouvée avec ce nom");
   } catch (error) {
-    console.error('Erreur lors de la recherche par nom via l\'API Gouv:', error);
+    if (axios.isAxiosError(error)) {
+      console.error('Erreur lors de la recherche par nom via l\'API Gouv:', error.response?.data || error.message);
+    } else {
+      const errorMessage = (error as Error).message;
+      console.error('Erreur lors de la recherche par nom via l\'API Gouv:', errorMessage);
+    }
     throw new Error("Impossible de rechercher des entreprises pour le moment");
   }
 };
