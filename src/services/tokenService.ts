@@ -1,3 +1,4 @@
+// tokenService.js
 import axios from 'axios';
 
 class TokenService {
@@ -20,7 +21,11 @@ class TokenService {
       }
       return this.token;
     } catch (error) {
-      console.error('Erreur lors du rafraîchissement du token:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Erreur lors du rafraîchissement du token:', error.response?.data || error.message);
+      } else {
+        console.error('Erreur lors du rafraîchissement du token:', (error as Error).message);
+      }
       throw new Error('Erreur lors du rafraîchissement du token');
     }
   }

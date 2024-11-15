@@ -62,10 +62,10 @@ const generateVATNumber = (siren: string): string | null => {
 // Extraction des informations d'une entreprise
 const extractEntrepriseInfoFromINSEE = (etablissement: any): EntrepriseInfo => {
   return {
-    nom_complet: etablissement.uniteLegale.denominationUniteLegale || 'Non disponible',
+    nom_complet: etablissement.uniteLegale?.denominationUniteLegale || 'Non disponible',
     siret: etablissement.siret || 'Non disponible',
     siren: etablissement.siren || 'Non disponible',
-    adresse: formatAddress(etablissement.adresseEtablissement), 
+    adresse: formatAddress(etablissement.adresseEtablissement),
     code_postal: etablissement.adresseEtablissement?.codePostalEtablissement || 'Non disponible',
     ville: etablissement.adresseEtablissement?.libelleCommuneEtablissement || 'Non disponible',
     numeroVoieEtablissement: etablissement.adresseEtablissement?.numeroVoieEtablissement || '',
@@ -83,9 +83,19 @@ const extractEntrepriseInfoFromINSEE = (etablissement: any): EntrepriseInfo => {
 export const searchEntreprise = async (query: string): Promise<EntrepriseInfo[]> => {
   try {
     const response = await axiosInstance.get(`/siret/${query}`);
+    console.log('Réponse brute de l’API INSEE pour le SIRET:', response.data);
+
+    if (!response.data || !response.data.uniteLegale) {
+      throw new Error("Données d'entreprise non trouvées.");
+    }
+
     return [extractEntrepriseInfoFromINSEE(response.data)];
   } catch (error) {
-    console.error('Erreur lors de la recherche :', error);
+    if (axios.isAxiosError(error)) {
+      console.error('Erreur lors de la recherche par SIRET/SIREN:', error.response?.data || error.message);
+    } else {
+      console.error('Erreur lors de la recherche par SIRET/SIREN:', (error as Error).message);
+    }
     throw new Error("Impossible de trouver l'entreprise avec ce SIRET/SIREN.");
   }
 };
@@ -96,12 +106,21 @@ export const searchEntrepriseByName = async (query: string): Promise<string[]> =
     const response = await axios.get('https://recherche-entreprises.api.gouv.fr/search', {
       params: { q: query, per_page: 10 },
     });
-    if (response.data.results) {
+
+    console.log('Résultats bruts pour la recherche par nom:', response.data);
+
+    if (response.data && response.data.results) {
       return response.data.results.map((result: any) => result.siren);
     }
+
     throw new Error("Aucune entreprise trouvée avec ce nom");
   } catch (error) {
-    console.error('Erreur lors de la recherche via l\'API gouv :', error);
+    if (axios.isAxiosError(error)) {
+      console.error('Erreur lors de la recherche par nom via l\'API Gouv:', error.response?.data || error.message);
+    } else {
+      const errorMessage = (error as Error).message;
+      console.error('Erreur lors de la recherche par nom via l\'API Gouv:', errorMessage);
+    }
     throw new Error("Impossible de rechercher des entreprises pour le moment");
   }
 };
