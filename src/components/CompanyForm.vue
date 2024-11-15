@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { EntrepriseInfo } from '../types/entreprise';
+import CompanySearchDialog from './SearchDialog.vue';
 
 const formData = ref<EntrepriseInfo>({
   nom_complet: '',
@@ -19,6 +20,8 @@ const formData = ref<EntrepriseInfo>({
   vat_number: '',
 });
 
+const isDialogVisible = ref(false);
+
 const updateFormData = (company: EntrepriseInfo) => {
   formData.value = { 
     ...company,
@@ -30,7 +33,11 @@ defineExpose({ updateFormData });
 </script>
 
 <template>
+  <!-- Formulaire principal -->
   <form class="company-form" @submit.prevent>
+    <!-- Bouton pour ouvrir le popup de recherche -->
+    <Button label="Rechercher une entreprise" icon="pi pi-search" @click="isDialogVisible = true" />
+
     <div class="form-group">
       <label for="nom_complet">Nom de l'entreprise</label>
       <InputText id="nom_complet" v-model="formData.nom_complet" placeholder="Nom de l'entreprise" />
@@ -90,15 +97,14 @@ defineExpose({ updateFormData });
       <InputText id="vat_number" v-model="formData.vat_number" placeholder="Numéro de TVA intracommunautaire" disabled />
     </div>
   </form>
-</template>
 
-<style scoped lang="scss">
-.company-form {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-</style>
+  <!-- Popup de recherche d'entreprise -->
+  <CompanySearchDialog 
+    :visible="isDialogVisible" 
+    @update:visible="isDialogVisible = $event" 
+    @selectCompany="updateFormData" 
+  />
+</template>
 
 <style scoped lang="scss">
 .company-form {
