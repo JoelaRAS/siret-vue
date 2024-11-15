@@ -15,12 +15,7 @@ const handleCompanySelect = (company: EntrepriseInfo) => {
 <template>
   <div class="app-container">
     <header class="app-header">
-      <h1>Gestion des entreprises</h1>
-      <Button 
-        label="Rechercher une entreprise" 
-        icon="pi pi-search" 
-        @click="searchDialogVisible = true" 
-      />
+      <h1>Gestion des entreprises</h1>>
     </header>
 
     <main class="app-content">
