@@ -1,8 +1,10 @@
+// entrepriseService.ts
 import axios from 'axios';
 import { tokenService } from './tokenService';
 
 const API_BASE_URL = 'https://api.insee.fr/entreprises/sirene/V3.11';
 
+// Configuration d'axios
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -41,10 +43,12 @@ export interface EntrepriseInfo {
   vat_number: string;
 }
 
+// Formate l'adresse pour l'afficher sous forme de chaîne
 const formatAddress = (adresse: Address): string => {
   return `${adresse.numeroVoieEtablissement || ''} ${adresse.typeVoieEtablissement || ''} ${adresse.libelleVoieEtablissement || ''}, ${adresse.codePostalEtablissement || ''} ${adresse.libelleCommuneEtablissement || ''}`.trim();
 };
 
+// Génère le numéro de TVA intracommunautaire
 const generateVATNumber = (siren: string): string | null => {
   if (!/^\d{9}$/.test(siren)) {
     console.error("Le numéro SIREN doit être composé de 9 chiffres.");
@@ -55,6 +59,7 @@ const generateVATNumber = (siren: string): string | null => {
   return `FR${String(key).padStart(2, '0')}${siren}`;
 };
 
+// Extraction des informations d'une entreprise
 const extractEntrepriseInfoFromINSEE = (etablissement: any): EntrepriseInfo => {
   return {
     nom_complet: etablissement.uniteLegale?.denominationUniteLegale || 'Non disponible',
@@ -74,50 +79,28 @@ const extractEntrepriseInfoFromINSEE = (etablissement: any): EntrepriseInfo => {
   };
 };
 
-export const searchEntreprise = async (query: string): Promise<EntrepriseInfo[]> => {
+// Requête par SIRET
+export const searchEntrepriseBySiret = async (siret: string): Promise<EntrepriseInfo[]> => {
   try {
-    console.log(`Recherche pour le SIRET : ${query}`);
-    const response = await axiosInstance.get(`/siret/${query}`);
+    const response = await axiosInstance.get(`/siret/${siret}`);
     console.log('Réponse brute de l’API INSEE pour le SIRET:', response.data);
-
-    if (!response.data || !response.data.uniteLegale) {
-      throw new Error("Données d'entreprise non trouvées.");
-    }
-
+    
     return [extractEntrepriseInfoFromINSEE(response.data)];
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error('Erreur lors de la recherche par SIRET/SIREN:', error.response?.data || error.message);
-    } else {
-      console.error('Erreur lors de la recherche par SIRET/SIREN:', (error as Error).message);
-    }
-    throw new Error("Impossible de trouver l'entreprise avec ce SIRET/SIREN.");
+    console.error('Erreur lors de la recherche par SIRET:', error);
+    throw new Error("Impossible de trouver l'entreprise avec ce SIRET.");
   }
 };
 
-export const searchEntrepriseByName = async (query: string): Promise<EntrepriseInfo[]> => {
+// Requête par SIREN
+export const searchEntrepriseBySiren = async (siren: string): Promise<EntrepriseInfo[]> => {
   try {
-    const response = await axios.get('https://recherche-entreprises.api.gouv.fr/search', {
-      params: { q: query, per_page: 10 },
-    });
-
-    console.log('Résultats bruts pour la recherche par nom:', response.data);
-
-    if (response.data && response.data.results) {
-      const entreprises = await Promise.all(
-        response.data.results.map(async (result: any) => await searchEntreprise(result.siren))
-      );
-      return entreprises.flat();
-    }
-
-    throw new Error("Aucune entreprise trouvée avec ce nom");
+    const response = await axiosInstance.get(`/siren/${siren}`);
+    console.log('Réponse brute de l’API INSEE pour le SIREN:', response.data);
+    
+    return response.data.etablissements.map((etablissement: any) => extractEntrepriseInfoFromINSEE(etablissement));
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error('Erreur lors de la recherche par nom via l\'API Gouv:', error.response?.data || error.message);
-    } else {
-      const errorMessage = (error as Error).message;
-      console.error('Erreur lors de la recherche par nom via l\'API Gouv:', errorMessage);
-    }
-    throw new Error("Impossible de rechercher des entreprises pour le moment");
+    console.error('Erreur lors de la recherche par SIREN:', error);
+    throw new Error("Impossible de trouver l'entreprise avec ce SIREN.");
   }
 };
