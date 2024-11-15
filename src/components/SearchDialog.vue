@@ -1,128 +1,191 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { EntrepriseInfo } from '../types/entreprise';
+import { searchEntreprise, searchEntrepriseByName } from '../services/entrepriseService';
 
-const formData = ref<EntrepriseInfo>({
-  nom_complet: '',
-  siret: '',
-  siren: '',
-  adresse: '',
-  code_postal: '',
-  ville: '',
-  numeroVoieEtablissement: '',
-  typeVoieEtablissement: '',
-  libelleVoieEtablissement: '',
-  date_creation: null,
-  tranche_effectif: '',
-  activite_principale: '',
-  nature_juridique: '',
-  vat_number: '',
-});
+// Props pour contrôler la visibilité du dialogue
+const props = defineProps<{ visible: boolean }>();
 
-const updateFormData = (company: EntrepriseInfo) => {
-  formData.value = { 
-    ...company,
-    date_creation: company.date_creation ? new Date(company.date_creation) : null
-  };
+// Emission des événements pour fermer le dialogue et transmettre l'entreprise sélectionnée
+const emit = defineEmits<{ 
+  (e: 'update:visible', value: boolean): void;
+  (e: 'selectCompany', company: EntrepriseInfo): void; 
+}>();
+
+// États pour les champs de recherche
+const searchQuery = ref('');
+const searchType = ref('siret'); // Type de recherche : par SIRET/SIREN ou par nom
+const loading = ref(false);
+const results = ref<EntrepriseInfo[]>([]);
+const error = ref('');
+const selectedCompany = ref<EntrepriseInfo | null>(null);
+
+// Fonction de recherche d'entreprise
+const search = async () => {
+  loading.value = true;
+  error.value = '';
+  results.value = [];
+  selectedCompany.value = null;
+  
+  try {
+    const rawResults = await (searchType.value === 'siret' 
+      ? searchEntreprise(searchQuery.value)
+      : searchEntrepriseByName(searchQuery.value));
+
+    results.value = rawResults.filter(company => typeof company === 'object' && company !== null).map(company => ({
+      ...company,
+      date_creation: company.date_creation ? new Date(company.date_creation) : null 
+    }));
+  } catch (e) {
+    error.value = (e as Error).message;
+  } finally {
+    loading.value = false;
+  }
 };
 
-defineExpose({ updateFormData });
+// Fonction pour sélectionner une entreprise
+const selectCompany = (company: EntrepriseInfo) => {
+  selectedCompany.value = company;
+};
+
+// Confirmation de la sélection
+const confirmSelection = () => {
+  if (selectedCompany.value) {
+    emit('selectCompany', selectedCompany.value);
+    emit('update:visible', false);
+    selectedCompany.value = null;
+  }
+};
+
+// Fermeture du dialogue
+const closeDialog = () => {
+  emit('update:visible', false);
+  selectedCompany.value = null;
+  results.value = [];
+  searchQuery.value = '';
+  error.value = '';
+};
 </script>
 
 <template>
-  <form class="company-form" @submit.prevent>
-    <div class="form-group">
-      <label for="nom_complet">Nom de l'entreprise</label>
-      <InputText id="nom_complet" v-model="formData.nom_complet" placeholder="Nom de l'entreprise" />
-    </div>
-
-    <div class="form-group">
-      <label for="siret">SIRET</label>
-      <InputText id="siret" v-model="formData.siret" placeholder="Numéro SIRET" />
-    </div>
-
-    <div class="form-group">
-      <label for="siren">SIREN</label>
-      <InputText id="siren" v-model="formData.siren" placeholder="Numéro SIREN" />
-    </div>
-
-    <div class="form-group">
-      <label for="adresse">Adresse complète</label>
-      <InputText id="adresse" v-model="formData.adresse" placeholder="Adresse complète" />
-    </div>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label for="code_postal">Code postal</label>
-        <InputText id="code_postal" v-model="formData.code_postal" placeholder="Code postal" />
+  <Dialog :visible="props.visible" modal header="Rechercher une entreprise" :style="{ width: '50vw' }" @update:visible="closeDialog">
+    <div class="search-container">
+      <div class="search-type">
+        <RadioButton v-model="searchType" value="siret" inputId="siret" />
+        <label for="siret">SIRET/SIREN</label>
+        
+        <RadioButton v-model="searchType" value="name" inputId="name" />
+        <label for="name">Nom</label>
       </div>
 
-      <div class="form-group">
-        <label for="ville">Ville</label>
-        <InputText id="ville" v-model="formData.ville" placeholder="Ville" />
-      </div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label for="date_creation">Date de création</label>
-        <Calendar id="date_creation" v-model="formData.date_creation" dateFormat="dd/mm/yy" placeholder="Sélectionnez une date" />
+      <div class="search-input">
+        <InputText v-model="searchQuery" :placeholder="searchType === 'siret' ? 'Entrez un SIRET ou SIREN' : 'Entrez le nom de l'entreprise'" @keyup.enter="search" />
+        <Button icon="pi pi-search" @click="search" :loading="loading" />
       </div>
 
-      <div class="form-group">
-        <label for="tranche_effectif">Tranche d'effectif</label>
-        <InputText id="tranche_effectif" v-model="formData.tranche_effectif" placeholder="Tranche d'effectif" />
+      <small class="error-message" v-if="error">{{ error }}</small>
+
+      <div class="results" v-if="results.length">
+        <div v-for="company in results" :key="company.siret" class="result-item" :class="{ 'selected': selectedCompany?.siret === company.siret }" @click="selectCompany(company)">
+          <div class="result-content">
+            <h3>{{ company.nom_complet }}</h3>
+            <p>SIRET: {{ company.siret }}</p>
+            <p>Adresse: {{ company.adresse }}</p>
+            <p>Activité: {{ company.activite_principale }}</p>
+          </div>
+          <div class="selection-indicator">
+            <i class="pi pi-check" v-if="selectedCompany?.siret === company.siret"></i>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="form-group">
-      <label for="activite_principale">Activité principale</label>
-      <InputText id="activite_principale" v-model="formData.activite_principale" placeholder="Activité principale" />
-    </div>
-
-    <div class="form-group">
-      <label for="nature_juridique">Nature juridique</label>
-      <InputText id="nature_juridique" v-model="formData.nature_juridique" placeholder="Nature juridique" />
-    </div>
-
-    <div class="form-group">
-      <label for="vat_number">Numéro de TVA intracommunautaire</label>
-      <InputText id="vat_number" v-model="formData.vat_number" placeholder="Numéro de TVA intracommunautaire" disabled />
-    </div>
-  </form>
+    <template #footer>
+      <Button label="Annuler" icon="pi pi-times" @click="closeDialog" class="p-button-text" />
+      <Button label="Sélectionner" icon="pi pi-check" @click="confirmSelection" :disabled="!selectedCompany" class="p-button-success" />
+    </template>
+  </Dialog>
 </template>
 
 <style scoped lang="scss">
-.company-form {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem;
+.search-container {
+  padding: 1rem;
 
-  .form-group {
-    margin-bottom: 1.5rem;
-
+  .search-type {
+    margin-bottom: 1rem;
+    
     label {
-      display: block;
+      margin-right: 1rem;
+      margin-left: 0.5rem;
+    }
+  }
+
+  .search-input {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+
+    .p-inputtext {
+      flex: 1;
+    }
+  }
+
+  .error-message {
+    color: red;
+    display: block;
+    margin-bottom: 1rem;
+  }
+
+  .results {
+    max-height: 400px;
+    overflow-y: auto;
+
+    .result-item {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
       margin-bottom: 0.5rem;
-      font-weight: 500;
-      color: #444;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: #f5f5f5;
+        border-color: #ccc;
+      }
+
+      &.selected {
+        background-color: #e3f2fd;
+        border-color: #2196f3;
+      }
+
+      .result-content {
+        flex: 1;
+
+        h3 {
+          margin: 0 0 0.5rem 0;
+          color: #333;
+        }
+
+        p {
+          margin: 0.25rem 0;
+          color: #666;
+          font-size: 0.9rem;
+        }
+      }
+
+      .selection-indicator {
+        width: 24px;
+        color: #2196f3;
+      }
     }
-
-    .p-inputtext,
-    .p-calendar {
-      width: 100%;
-    }
   }
+}
 
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
-
-  .form-actions {
-    margin-top: 2rem;
-    text-align: right;
-  }
+:deep(.p-dialog-footer) {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 </style>
