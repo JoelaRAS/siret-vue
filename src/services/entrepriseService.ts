@@ -37,7 +37,7 @@ const extractEntrepriseInfoFromINSEE = (etablissement: any) => {
   return {
     nom_complet: etablissement.uniteLegale.denominationUniteLegale || 'Non disponible',
     siret: etablissement.siret || 'Non disponible',
-    siren: etablissement.uniteLegale.siren || 'Non disponible',
+    siren: etablissement.siren || 'Non disponible',
     adresse: formatAddress(etablissement.adresseEtablissement) || 'Non disponible',
     code_postal: etablissement.adresseEtablissement?.codePostalEtablissement || 'Non disponible',
     ville: etablissement.adresseEtablissement?.libelleCommuneEtablissement || 'Non disponible',
@@ -45,7 +45,7 @@ const extractEntrepriseInfoFromINSEE = (etablissement: any) => {
     tranche_effectif: etablissement.uniteLegale.trancheEffectifsUniteLegale || 'Non disponible',
     activite_principale: etablissement.uniteLegale.activitePrincipaleUniteLegale || 'Non disponible',
     nature_juridique: etablissement.uniteLegale.categorieJuridiqueUniteLegale || 'Non disponible',
-    vat_number: generateVATNumber(etablissement.uniteLegale.siren) || 'Non disponible',
+    vat_number: generateVATNumber(etablissement.siren) || 'Non disponible',
   };
 };
 
