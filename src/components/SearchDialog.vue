@@ -3,6 +3,12 @@ import { ref } from 'vue';
 import type { EntrepriseInfo } from '../types/entreprise';
 import { searchEntreprise, searchEntrepriseByName } from '../services/entrepriseService';
 
+// Importation des composants PrimeVue (si nécessaire)
+import Dialog from 'primevue/dialog';
+import RadioButton from 'primevue/radiobutton';
+import InputText from 'primevue/inputtext';
+import Button from 'primevue/button';
+
 // Props pour contrôler la visibilité du dialogue
 const props = defineProps<{ visible: boolean }>();
 
