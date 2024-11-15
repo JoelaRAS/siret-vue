@@ -89,6 +89,7 @@ const closeDialog = () => {
             <p>SIRET: {{ company.siret }}</p>
             <p>SIREN: {{ company.siren }}</p>
             <p>Adresse: {{ company.adresse }}</p>
+            <p>date de creation : {{ company.date_creation }}</p>
             <p>Code Postal: {{ company.code_postal }}</p>
             <p>Ville: {{ company.ville }}</p>
             <p>Activité Principale: {{ company.activite_principale }}</p>
