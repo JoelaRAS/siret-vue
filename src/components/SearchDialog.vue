@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { EntrepriseInfo } from '../types/entreprise';
-import { searchEntreprise } from '../services/entrepriseService';
+import { searchEntreprise, searchEntrepriseByName } from '../services/entrepriseService';
 
 const props = defineProps<{ visible: boolean }>();
 
@@ -11,7 +11,7 @@ const emit = defineEmits<{
 }>();
 
 const searchQuery = ref('');
-const searchType = ref('siret');
+const searchMode = ref('id'); // "id" pour SIRET/SIREN et "name" pour le nom de l'entreprise
 const loading = ref(false);
 const results = ref<EntrepriseInfo[]>([]);
 const error = ref('');
@@ -25,9 +25,12 @@ const search = async () => {
   selectedCompany.value = null;
 
   try {
-    const rawResults = await searchEntreprise(searchQuery.value);
+    // Appel de la bonne fonction selon le mode de recherche sélectionné
+    const rawResults = searchMode.value === 'id'
+      ? await searchEntreprise(searchQuery.value) // Recherche par SIRET ou SIREN
+      : await searchEntrepriseByName(searchQuery.value); // Recherche par nom
 
-    // Formatage de la date et traitement des résultats
+    // Formate les résultats de la recherche pour affichage
     results.value = rawResults.map((company: { date_creation: string | number | Date; }) => ({
       ...company,
       date_creation: company.date_creation ? new Date(company.date_creation).toLocaleDateString() : 'Non disponible'
@@ -64,22 +67,32 @@ const closeDialog = () => {
   <Dialog :visible="props.visible" modal header="Rechercher une entreprise" :style="{ width: '50vw' }" @update:visible="closeDialog">
     <div class="search-container">
       <div class="search-type">
-        <RadioButton v-model="searchType" value="siret" inputId="siret" />
-        <label for="siret">SIRET</label>
+        <RadioButton v-model="searchMode" value="id" inputId="id" />
+        <label for="id">SIRET/SIREN</label>
         
-        <RadioButton v-model="searchType" value="siren" inputId="siren" />
-        <label for="siren">SIREN</label>
+        <RadioButton v-model="searchMode" value="name" inputId="name" />
+        <label for="name">Nom de l'entreprise</label>
       </div>
 
       <div class="search-input">
-        <InputText v-model="searchQuery" :placeholder="searchType === 'siret' ? 'Entrez un SIRET' : 'Entrez un SIREN'" @keyup.enter="search" />
+        <InputText 
+          v-model="searchQuery" 
+          :placeholder="searchMode === 'id' ? 'Entrez un SIRET ou SIREN' : 'Entrez le nom de l\'entreprise'" 
+          @keyup.enter="search" 
+        />
         <Button icon="pi pi-search" @click="search" :loading="loading" />
       </div>
 
       <small class="error-message" v-if="error">{{ error }}</small>
 
       <div class="results" v-if="results.length">
-        <div v-for="company in results" :key="company.siret" class="result-item" :class="{ 'selected': selectedCompany?.siret === company.siret }" @click="selectCompany(company)">
+        <div 
+          v-for="company in results" 
+          :key="company.siret" 
+          class="result-item" 
+          :class="{ 'selected': selectedCompany?.siret === company.siret }" 
+          @click="selectCompany(company)"
+        >
           <div class="result-content">
             <h3>{{ company.nom_complet }}</h3>
             <p>SIRET: {{ company.siret }}</p>
@@ -105,7 +118,6 @@ const closeDialog = () => {
     </template>
   </Dialog>
 </template>
-
 
 <style scoped lang="scss">
 .search-container {
