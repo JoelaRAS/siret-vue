@@ -23,24 +23,31 @@ const formData = ref<EntrepriseInfo>({
 const isDialogVisible = ref(false);
 
 const updateFormData = (company: EntrepriseInfo) => {
-  // Vérification du format de date
   console.log("Date de création reçue:", company.date_creation);
   let formattedDate = null;
 
   if (company.date_creation && typeof company.date_creation === 'string') {
-    const parsedDate = Date.parse(company.date_creation); // Essaye de parser la date
-    if (!isNaN(parsedDate)) {
-      formattedDate = new Date(parsedDate);
+    const dateParts = (company.date_creation as string).split('/');
+    if (dateParts.length === 3) {
+      // Recompose la date en format "aaaa-mm-jj" pour que JavaScript puisse la reconnaître
+      const isoDateString = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+      const parsedDate = new Date(isoDateString);
+      if (!isNaN(parsedDate.getTime())) {
+        formattedDate = parsedDate;
+      } else {
+        console.warn("Impossible de convertir la date :", company.date_creation);
+      }
     } else {
-      console.warn("Date de création dans un format invalide :", company.date_creation);
+      console.warn("Format de date inattendu :", company.date_creation);
     }
   }
 
   formData.value = { 
     ...company,
-    date_creation: formattedDate, // Assure que c’est bien un objet Date ou null
+    date_creation: formattedDate, // Affecte la date au bon format ou null
   };
 };
+
 
 
 defineExpose({ updateFormData });
