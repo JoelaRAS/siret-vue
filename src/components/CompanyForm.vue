@@ -73,7 +73,13 @@ defineExpose({ updateFormData });
     <div class="form-row">
       <div class="form-group">
         <label for="date_creation">Date de création</label>
-        <Calendar id="date_creation" v-model="formData.date_creation" dateFormat="dd/mm/yy" placeholder="Sélectionnez une date" />
+        <Calendar 
+          id="date_creation"
+          v-model="formData.date_creation" 
+          name="date_creation"
+          dateFormat="dd/mm/yy"
+          placeholder="Sélectionnez une date"
+        />
       </div>
 
       <div class="form-group">
