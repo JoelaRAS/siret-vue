@@ -41,7 +41,7 @@ const extractEntrepriseInfoFromINSEE = (etablissement: any) => {
     adresse: formatAddress(etablissement.adresseEtablissement) || 'Non disponible',
     code_postal: etablissement.adresseEtablissement?.codePostalEtablissement || 'Non disponible',
     ville: etablissement.adresseEtablissement?.libelleCommuneEtablissement || 'Non disponible',
-    date_creation: etablissement.dateCreationEtablissement || 'Non disponible',
+    date_creation: etablissement.uniteLegale.dateCreationUniteLegale || 'Non disponible',
     tranche_effectif: etablissement.uniteLegale.trancheEffectifsUniteLegale || 'Non disponible',
     activite_principale: etablissement.uniteLegale.activitePrincipaleUniteLegale || 'Non disponible',
     nature_juridique: etablissement.uniteLegale.categorieJuridiqueUniteLegale || 'Non disponible',
