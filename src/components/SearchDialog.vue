@@ -11,13 +11,12 @@ const emit = defineEmits<{
 }>();
 
 const searchQuery = ref('');
-const searchMode = ref('id'); // "id" pour SIRET/SIREN et "name" pour le nom de l'entreprise
+const searchType = ref('siret');
 const loading = ref(false);
 const results = ref<EntrepriseInfo[]>([]);
 const error = ref('');
 const selectedCompany = ref<EntrepriseInfo | null>(null);
 
-// Fonction de recherche d'entreprise
 const search = async () => {
   loading.value = true;
   error.value = '';
@@ -25,16 +24,17 @@ const search = async () => {
   selectedCompany.value = null;
 
   try {
-    // Appel de la bonne fonction selon le mode de recherche sélectionné
-    const rawResults = searchMode.value === 'id'
-      ? await searchEntreprise(searchQuery.value) // Recherche par SIRET ou SIREN
-      : await searchEntrepriseByName(searchQuery.value); // Recherche par nom
+    const rawResults = await (searchType.value === 'siret'
+      ? searchEntreprise(searchQuery.value)
+      : searchEntrepriseByName(searchQuery.value));
 
-    // Formate les résultats de la recherche pour affichage
-    results.value = rawResults.map((company: { date_creation: string | number | Date; }) => ({
-      ...company,
-      date_creation: company.date_creation ? new Date(company.date_creation).toLocaleDateString() : 'Non disponible'
-    }));
+      results.value = rawResults.map((company: { date_creation: string }) => ({
+  ...company,
+  date_creation: company.date_creation !== 'Non disponible' 
+    ? new Date(company.date_creation).toLocaleDateString() 
+    : 'Non disponible'
+}));
+
   } catch (e) {
     error.value = (e as Error).message;
   } finally {
@@ -67,32 +67,22 @@ const closeDialog = () => {
   <Dialog :visible="props.visible" modal header="Rechercher une entreprise" :style="{ width: '50vw' }" @update:visible="closeDialog">
     <div class="search-container">
       <div class="search-type">
-        <RadioButton v-model="searchMode" value="id" inputId="id" />
-        <label for="id">SIRET/SIREN</label>
+        <RadioButton v-model="searchType" value="siret" inputId="siret" />
+        <label for="siret">SIRET</label>
         
-        <RadioButton v-model="searchMode" value="name" inputId="name" />
-        <label for="name">Nom de l'entreprise</label>
+        <RadioButton v-model="searchType" value="siren" inputId="siren" />
+        <label for="siren">Nom d'entreprise</label>
       </div>
 
       <div class="search-input">
-        <InputText 
-          v-model="searchQuery" 
-          :placeholder="searchMode === 'id' ? 'Entrez un SIRET ou SIREN' : 'Entrez le nom de l\'entreprise'" 
-          @keyup.enter="search" 
-        />
+        <InputText v-model="searchQuery" :placeholder="searchType === 'siret' ? 'Entrez un SIRET ou SIREN' : 'Entrez le nom de l\'entreprise'" @keyup.enter="search" />
         <Button icon="pi pi-search" @click="search" :loading="loading" />
       </div>
 
       <small class="error-message" v-if="error">{{ error }}</small>
 
       <div class="results" v-if="results.length">
-        <div 
-          v-for="company in results" 
-          :key="company.siret" 
-          class="result-item" 
-          :class="{ 'selected': selectedCompany?.siret === company.siret }" 
-          @click="selectCompany(company)"
-        >
+        <div v-for="company in results" :key="company.siret" class="result-item" :class="{ 'selected': selectedCompany?.siret === company.siret }" @click="selectCompany(company)">
           <div class="result-content">
             <h3>{{ company.nom_complet }}</h3>
             <p>SIRET: {{ company.siret }}</p>
@@ -125,7 +115,6 @@ const closeDialog = () => {
 
   .search-type {
     margin-bottom: 1rem;
-    
     label {
       margin-right: 1rem;
       margin-left: 0.5rem;
@@ -136,10 +125,7 @@ const closeDialog = () => {
     display: flex;
     gap: 0.5rem;
     margin-bottom: 1rem;
-
-    .p-inputtext {
-      flex: 1;
-    }
+    .p-inputtext { flex: 1; }
   }
 
   .error-message {
@@ -151,7 +137,6 @@ const closeDialog = () => {
   .results {
     max-height: 400px;
     overflow-y: auto;
-
     .result-item {
       display: flex;
       align-items: center;
@@ -161,43 +146,11 @@ const closeDialog = () => {
       margin-bottom: 0.5rem;
       cursor: pointer;
       transition: all 0.2s ease;
-
-      &:hover {
-        background-color: #f5f5f5;
-        border-color: #ccc;
-      }
-
-      &.selected {
-        background-color: #e3f2fd;
-        border-color: #2196f3;
-      }
-
-      .result-content {
-        flex: 1;
-
-        h3 {
-          margin: 0 0 0.5rem 0;
-          color: #333;
-        }
-
-        p {
-          margin: 0.25rem 0;
-          color: #666;
-          font-size: 0.9rem;
-        }
-      }
-
-      .selection-indicator {
-        width: 24px;
-        color: #2196f3;
-      }
+      &:hover { background-color: #f5f5f5; border-color: #ccc; }
+      &.selected { background-color: #e3f2fd; border-color: #2196f3; }
+      .result-content { flex: 1; }
+      .selection-indicator { width: 24px; color: #2196f3; }
     }
   }
-}
-
-:deep(.p-dialog-footer) {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
 }
 </style>
