@@ -4,7 +4,6 @@ import { tokenService } from './tokenService';
 
 const API_BASE_URL = 'https://api.insee.fr/entreprises/sirene/V3.11';
 
-// Configuration d'axios
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -43,7 +42,7 @@ export interface EntrepriseInfo {
   vat_number: string;
 }
 
-// Formate l'adresse pour l'afficher sous forme de chaîne
+// Fonction pour formater l'adresse en chaîne de caractères
 const formatAddress = (adresse: Address): string => {
   return `${adresse.numeroVoieEtablissement || ''} ${adresse.typeVoieEtablissement || ''} ${adresse.libelleVoieEtablissement || ''}, ${adresse.codePostalEtablissement || ''} ${adresse.libelleCommuneEtablissement || ''}`.trim();
 };
@@ -59,27 +58,27 @@ const generateVATNumber = (siren: string): string | null => {
   return `FR${String(key).padStart(2, '0')}${siren}`;
 };
 
-// Extraction des informations d'une entreprise
+// Extraction des informations de l'API INSEE
 const extractEntrepriseInfoFromINSEE = (etablissement: any): EntrepriseInfo => {
   return {
     nom_complet: etablissement.uniteLegale?.denominationUniteLegale || 'Non disponible',
     siret: etablissement.siret || 'Non disponible',
-    siren: etablissement.siren || 'Non disponible',
+    siren: etablissement.uniteLegale?.siren || 'Non disponible',
     adresse: formatAddress(etablissement.adresseEtablissement),
     code_postal: etablissement.adresseEtablissement?.codePostalEtablissement || 'Non disponible',
     ville: etablissement.adresseEtablissement?.libelleCommuneEtablissement || 'Non disponible',
     numeroVoieEtablissement: etablissement.adresseEtablissement?.numeroVoieEtablissement || '',
     typeVoieEtablissement: etablissement.adresseEtablissement?.typeVoieEtablissement || '',
     libelleVoieEtablissement: etablissement.adresseEtablissement?.libelleVoieEtablissement || '',
-    date_creation: etablissement.dateCreationUniteLegale ? new Date(etablissement.dateCreationUniteLegale) : null,
-    tranche_effectif: etablissement.trancheEffectifsUniteLegale || 'Non disponible',
-    activite_principale: etablissement.activitePrincipaleUniteLegale || 'Non disponible',
-    nature_juridique: etablissement.categorieJuridiqueUniteLegale || 'Non disponible',
-    vat_number: generateVATNumber(etablissement.siren) || 'Non disponible',
+    date_creation: etablissement.uniteLegale?.dateCreationUniteLegale ? new Date(etablissement.uniteLegale.dateCreationUniteLegale) : null,
+    tranche_effectif: etablissement.uniteLegale?.trancheEffectifsUniteLegale || 'Non disponible',
+    activite_principale: etablissement.uniteLegale?.activitePrincipaleUniteLegale || 'Non disponible',
+    nature_juridique: etablissement.uniteLegale?.categorieJuridiqueUniteLegale || 'Non disponible',
+    vat_number: generateVATNumber(etablissement.uniteLegale?.siren) || 'Non disponible',
   };
 };
 
-// Requête par SIRET
+// Recherche par SIRET
 export const searchEntrepriseBySiret = async (siret: string): Promise<EntrepriseInfo[]> => {
   try {
     const response = await axiosInstance.get(`/siret/${siret}`);
@@ -92,13 +91,17 @@ export const searchEntrepriseBySiret = async (siret: string): Promise<Entreprise
   }
 };
 
-// Requête par SIREN
+// Recherche par SIREN
 export const searchEntrepriseBySiren = async (siren: string): Promise<EntrepriseInfo[]> => {
   try {
     const response = await axiosInstance.get(`/siren/${siren}`);
     console.log('Réponse brute de l’API INSEE pour le SIREN:', response.data);
-    
-    return response.data.etablissements.map((etablissement: any) => extractEntrepriseInfoFromINSEE(etablissement));
+
+    if (response.data && response.data.etablissements) {
+      return response.data.etablissements.map((etablissement: any) => extractEntrepriseInfoFromINSEE(etablissement));
+    } else {
+      throw new Error("Aucune entreprise trouvée pour ce SIREN.");
+    }
   } catch (error) {
     console.error('Erreur lors de la recherche par SIREN:', error);
     throw new Error("Impossible de trouver l'entreprise avec ce SIREN.");
