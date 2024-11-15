@@ -19,43 +19,46 @@ axiosInstance.interceptors.request.use(async (config) => {
 });
 
 // Fonction pour formater l'adresse en une chaîne unique
-const formatAddress = (adresse: { numeroVoieEtablissement?: any; typeVoieEtablissement?: any; libelleVoieEtablissement?: any; codePostalEtablissement: any; libelleCommuneEtablissement: any; }) => {
+const formatAddress = (adresse: any) => {
   return `${adresse.numeroVoieEtablissement || ''} ${adresse.typeVoieEtablissement || ''} ${adresse.libelleVoieEtablissement || ''}, ${adresse.codePostalEtablissement || ''} ${adresse.libelleCommuneEtablissement || ''}`.trim();
-};
-
-// Extraction des informations d'une entreprise, y compris les nouveaux champs
-const extractEntrepriseInfoFromINSEE = (etablissement: { uniteLegale: { denominationUniteLegale: any; siren: any; dateCreationUniteLegale: any; trancheEffectifsUniteLegale: { trancheEffectifsUniteLegale: any; }; activitePrincipaleUniteLegale: any; categorieJuridiqueUniteLegale: any; }; siret: any; adresseEtablissement: { codePostalEtablissement: any; libelleCommuneEtablissement: any; numeroVoieEtablissement?: any; typeVoieEtablissement?: any; libelleVoieEtablissement?: any; }; }) => {
-  const entrepriseInfo = {
-    nom_complet: etablissement.uniteLegale.denominationUniteLegale || 'Non disponible',
-    siret: etablissement.siret || 'Non disponible',
-    siren: etablissement.uniteLegale.siren || 'Non disponible',
-    adresse: formatAddress(etablissement.adresseEtablissement) || 'Non disponible',
-    code_postal: etablissement.adresseEtablissement?.codePostalEtablissement || 'Non disponible',
-    ville: etablissement.adresseEtablissement?.libelleCommuneEtablissement || 'Non disponible',
-    date_creation: etablissement.uniteLegale.dateCreationUniteLegale || 'Non disponible',
-    tranche_effectif: etablissement.uniteLegale.trancheEffectifsUniteLegale?.trancheEffectifsUniteLegale || 'Non disponible',
-    activite_principale: etablissement.uniteLegale.activitePrincipaleUniteLegale || 'Non disponible',
-    nature_juridique: etablissement.uniteLegale.categorieJuridiqueUniteLegale || 'Non disponible',
-    vat_number: generateVATNumber(etablissement.uniteLegale.siren) || 'Non disponible',
-  };
-
-  console.log("Informations extraites de l'INSEE:", entrepriseInfo);
-  return entrepriseInfo;
 };
 
 // Génération du numéro de TVA intracommunautaire
 const generateVATNumber = (siren: string) => {
   if (!/^\d{9}$/.test(siren)) {
     console.error("Le numéro SIREN doit être composé de 9 chiffres.");
-    return null;
+    return 'Non disponible';
   }
   const sirenNumber = parseInt(siren, 10);
   const key = (12 + 3 * (sirenNumber % 97)) % 97;
   return `FR${String(key).padStart(2, '0')}${siren}`;
 };
 
+// Extraction des informations d'une entreprise, y compris les nouveaux champs
+const extractEntrepriseInfoFromINSEE = (etablissement: any) => {
+  const siren = etablissement.uniteLegale?.siren || 'Non disponible';
+  const entrepriseInfo = {
+    nom_complet: etablissement.uniteLegale?.denominationUniteLegale || 'Non disponible',
+    siret: etablissement.siret || 'Non disponible',
+    siren,
+    adresse: formatAddress(etablissement.adresseEtablissement) || 'Non disponible',
+    code_postal: etablissement.adresseEtablissement?.codePostalEtablissement || 'Non disponible',
+    ville: etablissement.adresseEtablissement?.libelleCommuneEtablissement || 'Non disponible',
+    date_creation: etablissement.uniteLegale?.dateCreationUniteLegale
+      ? new Date(etablissement.uniteLegale.dateCreationUniteLegale).toLocaleDateString()
+      : 'Non disponible',
+    tranche_effectif: etablissement.uniteLegale?.trancheEffectifsUniteLegale?.trancheEffectifsUniteLegale || 'Non disponible',
+    activite_principale: etablissement.uniteLegale?.activitePrincipaleUniteLegale || 'Non disponible',
+    nature_juridique: etablissement.uniteLegale?.categorieJuridiqueUniteLegale || 'Non disponible',
+    vat_number: generateVATNumber(siren),
+  };
+
+  console.log("Informations extraites de l'INSEE:", entrepriseInfo);
+  return entrepriseInfo;
+};
+
 // Fonction principale pour rechercher une entreprise par SIRET ou SIREN
-export const searchEntreprise = async (query: string | any[]) => {
+export const searchEntreprise = async (query: string) => {
   try {
     const param = query.length === 9 ? `siren:${query}` : `siret:${query}`;
     console.log(`Recherche pour ${param}`);
@@ -78,7 +81,7 @@ export const searchEntreprise = async (query: string | any[]) => {
 };
 
 // Recherche de SIRENs par nom via l'API gouvernementale
-export const searchEntrepriseByTextGovApi = async (query: any) => {
+export const searchEntrepriseByTextGovApi = async (query: string) => {
   try {
     const response = await axios.get('https://recherche-entreprises.api.gouv.fr/search', {
       params: {
@@ -88,27 +91,23 @@ export const searchEntrepriseByTextGovApi = async (query: any) => {
     });
 
     if (response.data && response.data.results && response.data.results.length > 0) {
-      return response.data.results.map((result: { siren: any; }) => result.siren);
+      return response.data.results.map((result: { siren: string }) => result.siren);
     }
     throw new Error("Aucune entreprise trouvée avec ce nom");
   } catch (error) {
-    if (error instanceof Error) {
-      console.error("Erreur lors de la recherche via l'API gouv :", error.message);
-    } else {
-      console.error("Erreur lors de la recherche via l'API gouv :", error);
-    }
+    console.error("Erreur lors de la recherche via l'API gouv :", (error as Error).message);
     throw new Error("Impossible de rechercher des entreprises pour le moment");
   }
 };
 
 // Recherche d'une entreprise par nom et obtention des détails via INSEE
-export const searchEntrepriseByName = async (query: any) => {
+export const searchEntrepriseByName = async (query: string) => {
   try {
     const sirenList = await searchEntrepriseByTextGovApi(query);
     console.log("SIRENs trouvés via l'API gouv :", sirenList);
 
     const entreprises = await Promise.all(
-      sirenList.map(async (siren: any) => {
+      sirenList.map(async (siren: string) => {
         try {
           const result = await searchEntreprise(siren);
           return result;
