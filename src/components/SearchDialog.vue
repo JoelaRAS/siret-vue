@@ -30,10 +30,11 @@ const search = async () => {
 
       results.value = rawResults.map((company: { date_creation: string }) => ({
   ...company,
-  date_creation: company.date_creation !== 'Non disponible' 
-    ? new Date(company.date_creation).toLocaleDateString() 
+  date_creation: company.date_creation && company.date_creation !== 'Non disponible'
+    ? new Date(company.date_creation).toLocaleDateString('fr-FR')  // Format français (ou ajuster selon besoin)
     : 'Non disponible'
 }));
+
 
   } catch (e) {
     error.value = (e as Error).message;
