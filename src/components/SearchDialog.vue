@@ -1,20 +1,17 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { EntrepriseInfo } from '../types/entreprise';
-import { searchEntrepriseBySiret, searchEntrepriseBySiren } from '../services/entrepriseService';
+import { searchEntreprise } from '../services/entrepriseService';
 
-// Props pour contrôler la visibilité du dialogue
 const props = defineProps<{ visible: boolean }>();
 
-// Emission des événements pour fermer le dialogue et transmettre l'entreprise sélectionnée
 const emit = defineEmits<{ 
   (e: 'update:visible', value: boolean): void;
   (e: 'selectCompany', company: EntrepriseInfo): void; 
 }>();
 
-// États pour les champs de recherche
 const searchQuery = ref('');
-const searchType = ref('siret'); // Type de recherche : par SIRET ou par SIREN
+const searchType = ref('siret');
 const loading = ref(false);
 const results = ref<EntrepriseInfo[]>([]);
 const error = ref('');
@@ -26,15 +23,14 @@ const search = async () => {
   error.value = '';
   results.value = [];
   selectedCompany.value = null;
-  
-  try {
-    const rawResults = await (searchType.value === 'siret' 
-      ? searchEntrepriseBySiret(searchQuery.value)
-      : searchEntrepriseBySiren(searchQuery.value));
 
-    results.value = rawResults.map(company => ({
+  try {
+    const rawResults = await searchEntreprise(searchQuery.value);
+
+    // Formatage de la date et traitement des résultats
+    results.value = rawResults.map((company: { date_creation: string | number | Date; }) => ({
       ...company,
-      date_creation: company.date_creation ? new Date(company.date_creation) : null 
+      date_creation: company.date_creation ? new Date(company.date_creation).toLocaleDateString() : 'Non disponible'
     }));
   } catch (e) {
     error.value = (e as Error).message;
@@ -43,12 +39,10 @@ const search = async () => {
   }
 };
 
-// Fonction pour sélectionner une entreprise
 const selectCompany = (company: EntrepriseInfo) => {
   selectedCompany.value = company;
 };
 
-// Confirmation de la sélection
 const confirmSelection = () => {
   if (selectedCompany.value) {
     emit('selectCompany', selectedCompany.value);
@@ -57,7 +51,6 @@ const confirmSelection = () => {
   }
 };
 
-// Fermeture du dialogue
 const closeDialog = () => {
   emit('update:visible', false);
   selectedCompany.value = null;
@@ -90,8 +83,14 @@ const closeDialog = () => {
           <div class="result-content">
             <h3>{{ company.nom_complet }}</h3>
             <p>SIRET: {{ company.siret }}</p>
+            <p>SIREN: {{ company.siren }}</p>
             <p>Adresse: {{ company.adresse }}</p>
-            <p>Activité: {{ company.activite_principale }}</p>
+            <p>Code Postal: {{ company.code_postal }}</p>
+            <p>Ville: {{ company.ville }}</p>
+            <p>Activité Principale: {{ company.activite_principale }}</p>
+            <p>Tranche Effectif: {{ company.tranche_effectif }}</p>
+            <p>Nature Juridique: {{ company.nature_juridique }}</p>
+            <p>Numéro TVA: {{ company.vat_number }}</p>
           </div>
           <div class="selection-indicator">
             <i class="pi pi-check" v-if="selectedCompany?.siret === company.siret"></i>
@@ -106,6 +105,7 @@ const closeDialog = () => {
     </template>
   </Dialog>
 </template>
+
 
 <style scoped lang="scss">
 .search-container {
