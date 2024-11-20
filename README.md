@@ -114,5 +114,4 @@ const saveToBackend = () => {
 ## Best Practices for Integration
 
 1. **Token Validity Check**: Always ensure a valid token is available for API requests using `tokenService.getValidToken()`
-2. **Error Handling**: Use proper error handling for cases where the search fails (e.g., network issues, invalid entries) and display messages to inform the user
-3. **Customization**: Use the `updateFormData` function to customize field mapping based on your ERP's requirements, making integration adaptable to different ERP structures
+2. **Customization**: Use the `updateFormData` function to customize field mapping based on your ERP's requirements, making integration adaptable to different ERP structures
